@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GlobalAlign Bio Dashboard</title>
+    <!-- Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen p-6 font-sans">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <header class="mb-8 border-b border-slate-700 pb-4 flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-extrabold text-teal-400 tracking-tight">GlobalAlign Bio</h1>
+                <p class="text-slate-400 text-sm">Needleman-Wunsch Bioinformatics Sequence Alignment Dashboard</p>
+            </div>
+            <div class="text-right text-xs text-slate-400 bg-slate-800 p-3 rounded-lg border border-slate-700">
+                <p><span class="font-semibold text-slate-200">Group 22</span> | Roll: 2520030417</p>
+                <p class="text-teal-300">DSA-3 Project</p>
+            </div>
+        </header>
+
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Input Panel -->
+            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl md:col-span-1 space-y-4">
+                <h2 class="text-lg font-bold text-teal-300">Sequence Inputs</h2>
+                
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Sequence 1 (DNA)</label>
+                    <input type="text" id="seq1" value="AGACT" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm uppercase tracking-wider text-teal-200 focus:outline-none focus:border-teal-400">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Sequence 2 (DNA)</label>
+                    <input type="text" id="seq2" value="GAC" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm uppercase tracking-wider text-teal-200 focus:outline-none focus:border-teal-400">
+                </div>
+
+                <div class="pt-2 border-t border-slate-700 space-y-3">
+                    <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Scoring Weights</h3>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div>
+                            <label class="block text-[10px] text-slate-400">Match</label>
+                            <input type="number" id="matchScore" value="2" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-center text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-slate-400">Mismatch</label>
+                            <input type="number" id="mismatchScore" value="-1" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-center text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-slate-400">Gap</label>
+                            <input type="number" id="gapScore" value="-2" class="w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-center text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="runAlignment()" class="w-full mt-4 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold py-2.5 rounded-xl transition duration-200 shadow-lg">
+                    Run Alignment
+                </button>
+            </div>
+
+            <!-- Output / Results Panel -->
+            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl md:col-span-2 space-y-6 flex flex-col justify-between">
+                <div>
+                    <h2 class="text-lg font-bold text-teal-300 mb-4">Alignment Results</h2>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50">
+                            <span class="text-xs text-slate-400 block">Optimal Score</span>
+                            <span id="outScore" class="text-3xl font-extrabold text-teal-400">-</span>
+                        </div>
+                        <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50">
+                            <span class="text-xs text-slate-400 block">Status</span>
+                            <span class="text-sm font-semibold text-emerald-400 flex items-center mt-2">
+                                <span class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse mr-2"></span> Computed Successfully
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1">Aligned Sequence 1</span>
+                            <div id="outSeq1" class="bg-slate-900 p-3 rounded-lg font-mono text-lg tracking-widest text-teal-200 border border-slate-700 overflow-x-auto">
+                                -
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1">Aligned Sequence 2</span>
+                            <div id="outSeq2" class="bg-slate-900 p-3 rounded-lg font-mono text-lg tracking-widest text-teal-200 border border-slate-700 overflow-x-auto">
+                                -
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center text-xs text-slate-500 border-t border-slate-700 pt-4">
+                    GlobalAlign Bio &bull; Dynamic Programming Algorithm Visualizer
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Implementation of Needleman-Wunsch -->
+    <script>
+        function runAlignment() {
+            const seq1 = document.getElementById('seq1').value.toUpperCase().trim();
+            const seq2 = document.getElementById('seq2').value.toUpperCase().trim();
+            const MATCH = parseInt(document.getElementById('matchScore').value);
+            const MISMATCH = parseInt(document.getElementById('mismatchScore').value);
+            const GAP = parseInt(document.getElementById('gapScore').value);
+
+            if (!seq1 || !seq2) {
+                alert("Please enter valid sequences!");
+                return;
+            }
+
+            const n = seq1.length;
+            const m = seq2.length;
+
+            // 1. Initialize DP Table
+            let dp = Array.from(Array(n + 1), () => Array(m + 1).fill(0));
+
+            for (let i = 0; i <= n; i++) dp[i][0] = i * GAP;
+            for (let j = 0; j <= m; j++) dp[0][j] = j * GAP;
+
+            // 2. Fill DP Table
+            for (let i = 1; i <= n; i++) {
+                for (let j = 1; j <= m; j++) {
+                    let c1 = seq1[i - 1];
+                    let c2 = seq2[j - 1];
+                    let scoreMM = (c1 === c2) ? MATCH : MISMATCH;
+
+                    let diagonal = dp[i - 1][j - 1] + scoreMM;
+                    let up = dp[i - 1][j] + GAP;
+                    let left = dp[i][j - 1] + GAP;
+
+                    dp[i][j] = Math.max(diagonal, Math.max(up, left));
+                }
+            }
+
+            // 3. Traceback
+            let i = n;
+            let j = m;
+            let aligned1 = [];
+            let aligned2 = [];
+
+            while (i > 0 || j > 0) {
+                let c1 = (i > 0) ? seq1[i - 1] : '';
+                let c2 = (j > 0) ? seq2[j - 1] : '';
+                let scoreMM = (i > 0 && j > 0 && c1 === c2) ? MATCH : MISMATCH;
+
+                if (i > 0 && j > 0 && dp[i][j] === dp[i - 1][j - 1] + scoreMM) {
+                    aligned1.push(c1);
+                    aligned2.push(c2);
+                    i--;
+                    j--;
+                } else if (i > 0 && dp[i][j] === dp[i - 1][j] + GAP) {
+                    aligned1.push(c1);
+                    aligned2.push('-');
+                    i--;
+                } else {
+                    aligned1.push('-');
+                    aligned2.push(c2);
+                    j--;
+                }
+            }
+
+            aligned1.reverse();
+            aligned2.reverse();
+
+            // 4. Render to Dashboard
+            document.getElementById('outScore').innerText = dp[n][m];
+            document.getElementById('outSeq1').innerHTML = aligned1.map(c => `<span class="${c === '-' ? 'text-rose-400' : 'text-teal-300'} px-1">${c}</span>`).join(' ');
+            document.getElementById('outSeq2').innerHTML = aligned2.map(c => `<span class="${c === '-' ? 'text-rose-400' : 'text-teal-300'} px-1">${c}</span>`).join(' ');
+        }
+
+        // Run on load
+        window.onload = runAlignment;
+    </script>
+</body>
+</html>
